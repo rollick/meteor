@@ -453,5 +453,14 @@ Tinytest.add("minimongo - selector and projection combination", function (test) 
     F({ 'a.b.c': 1 }, { $set: { 'a.b': 222 } }, "a simple scalar selector and simple set a wrong type");
   });
 
+  Tinytest.add("minimongo - can selector become true by modifier - simple selectors and simple tests", function (t) {
+    test = t;
+    T({ 'a.b.c': { $lt: 5 } }, { $set: { 'a.b': { c: 4 } } }, "nested $lt");
+    F({ 'a.b.c': { $lt: 5 } }, { $set: { 'a.b': { c: 5 } } }, "nested $lt");
+    F({ 'a.b.c': { $lt: 5 } }, { $set: { 'a.b': { c: 6 } } }, "nested $lt");
+    T({ 'a.b.c': { $lt: 5 } }, { $set: { 'a.b': { d: 7 } } }, "nested $lt, the change doesn't matter");
+    T({ 'a.b.c': { $lt: 5 } }, { $set: { 'a.b': { d: 7, c: -1 } } }, "nested $lt");
+  });
+
 })();
 

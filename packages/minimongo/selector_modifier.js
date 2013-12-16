@@ -67,14 +67,20 @@ LocalCollection._canSelectorBecomeTrueByModifier = function (selector, modifier)
       _.any(_.keys(modifier.$set), pathHasNumericKeys))
     return true;
 
-  if (!isLiteralSelector(selector))
+  if (!isSimpleSelector(selector))
     return true;
 
   // convert a selector into an object matching the selector
   // { 'a.b': { ans: 42 }, 'foo.bar': null, 'foo.baz': "something" }
   // => { a: { b: { ans: 42 } }, foo: { bar: null, baz: "something" } }
+  // for a non-literal selector we set a hackish object of AllMatcher type
   var doc = pathsToTree(_.keys(selector),
-                        function (path) { return selector[path]; },
+                        function (path) {
+                          if (isLiteralSubSelector(selector[path]))
+                            return selector[path];
+                          // XXX HACK
+                          return new AllMatcher();
+                        },
                         _.identity /*conflict resolution is no resolution*/);
 
   var selectorFn = LocalCollection._compileSelector(selector);
@@ -123,15 +129,26 @@ function numericKey (s) {
   return /^[0-9]+$/.test(s);
 }
 
-function isLiteralSelector (selector) {
+function isSimpleSelector (selector) {
   return _.all(selector, function (subSelector, keyPath) {
     if (keyPath.substr(0, 1) === "$" || _.isRegExp(subSelector))
       return false;
     if (!_.isObject(subSelector) || _.isArray(subSelector))
       return true;
     return _.all(subSelector, function (value, key) {
-      return key.substr(0, 1) !== "$";
+      return key.substr(0, 1) !== "$" ||
+        _.contains(["$gt", "$gte", "$lt", "$lte", "$ne", "$in", "$nin"], key);
     });
+  });
+}
+
+function isLiteralSubSelector (subSelector) {
+  if (_.isRegExp(subSelector))
+    return false;
+  if (!_.isObject(subSelector) || _.isArray(subSelector))
+    return true;
+  return _.all(subSelector, function (value, key) {
+    return key.substr(0, 1) !== "$";
   });
 }
 

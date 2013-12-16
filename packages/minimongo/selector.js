@@ -5,12 +5,16 @@ var isArray = function (x) {
 };
 
 var _anyIfArray = function (x, f) {
+  // XXX HACK
+  if (x instanceof AllMatcher) return true;
   if (isArray(x))
     return _.any(x, f);
   return f(x);
 };
 
 var _anyIfArrayPlus = function (x, f) {
+  // XXX HACK
+  if (x instanceof AllMatcher) return true;
   if (f(x))
     return true;
   return isArray(x) && _.any(x, f);
@@ -785,4 +789,10 @@ LocalCollection._compileSort = function (spec, cursor) {
     return 0;
   };
 };
+
+AllMatcher = function () {
+  // XXX HACK
+  this.thisIsSuperHack = true;
+  return this;
+}
 
